@@ -6,167 +6,126 @@
 // #include "C:\Wichtig\System\Static\Container\Vector.h"
 
 #include "/home/codeleaded/System/Static/Library/WindowEngine1.0.h"
-#include "/home/codeleaded/System/Static/Library/MenuSystem.h"
 #include "/home/codeleaded/System/Static/Library/TransformedView.h"
 
-MenuSystem menu;
-MenuOption* selected;
+
+#define WORLD_X			100
+#define WORLD_Y			100
+
+#define WORLD_ERROR 	-1
+#define WORLD_INACTIVE	0
+#define WORLD_ACTIVE	1
+
+
+char* world;
+char* world_target;
+
+char World_Get(char* world,int x,int y){
+	if(x<0 || x>=WORLD_X || y<0 || y>=WORLD_Y) return WORLD_ERROR;
+	return world[y * WORLD_X + x];
+}
+void World_Set(char* world,int x,int y,char c){
+	if(x<0 || x>=WORLD_X || y<0 || y>=WORLD_Y) return;
+	world[y * WORLD_X + x] = c;
+}
+char World_Get_N(char* world,int x,int y){
+	if(x<0 || x>=WORLD_X || y<0 || y>=WORLD_Y) return 0;
+	
+	char count = 0;
+	for(int i = -1;i<=1;i++){
+		for(int j = -1;j<=1;j++){
+			if(i==0 && j==0) continue;
+			
+			const char c = World_Get(world,x + j,y + i);
+			if(c == WORLD_ACTIVE) count++;
+		}
+	}
+	return count;
+}
 
 TransformedView tv;
-Rect rect;
-Vec2 velocity;
-Vec2 acceleration;
 
 void Setup(AlxWindow* w){
-	menu = MenuSystem_New(
-		"./assets/Pointer.png",
-		"./assets/Fold.png",
-		"./assets/FoldUp.png",
-		"./assets/FoldDown.png",
-		"./assets/Rainbow_Atlas.png",
-		64,0.5f
-	);
-
-	/*
-	MenuSystem_Set(&menu,0,(int[]){   },	MenuOption_New(0,"root"));
-	MenuSystem_Add(&menu,0,(int[]){   },	MenuOption_New(0,"magic"));
-	MenuSystem_Add(&menu,1,(int[]){ 0 },	MenuOption_New(1,"potions"));
-	MenuSystem_Add(&menu,2,(int[]){ 0,0 },	MenuOption_New(2,"heal"));
-	MenuSystem_Add(&menu,2,(int[]){ 0,0 },	MenuOption_New(3,"damage"));
-	MenuSystem_Add(&menu,1,(int[]){ 0 },	MenuOption_New(4,"iceball"));
-	MenuSystem_Add(&menu,1,(int[]){ 0 },	MenuOption_New(5,"lightning"));
-	MenuSystem_Add(&menu,0,(int[]){   },	MenuOption_New(6,"arrows"));
-	MenuSystem_Add(&menu,1,(int[]){ 1 },	MenuOption_New(7,"small"));
-	MenuSystem_Add(&menu,2,(int[]){ 1,0 },	MenuOption_New(8,"invisible"));
-	MenuSystem_Add(&menu,2,(int[]){ 1,0 },	MenuOption_New(9,"fast"));
-	MenuSystem_Add(&menu,1,(int[]){ 1 },	MenuOption_New(10,"big"));
-	MenuSystem_Add(&menu,2,(int[]){ 1,1 },	MenuOption_New(11,"invisible"));
-	MenuSystem_Add(&menu,2,(int[]){ 1,1 },	MenuOption_New(12,"fast"));
-	MenuSystem_Add(&menu,1,(int[]){ 1 },	MenuOption_New(13,"lightningarrow"));
-	MenuSystem_Add(&menu,0,(int[]){   },	MenuOption_New(14,"swords"));
-	MenuSystem_Add(&menu,1,(int[]){ 2 },	MenuOption_New(15,"fireswords"));
-	MenuSystem_Add(&menu,1,(int[]){ 2 },	MenuOption_New(16,"iceswords"));
-	MenuSystem_Add(&menu,1,(int[]){ 2 },	MenuOption_New(17,"lightningswords"));
-	MenuSystem_Add(&menu,0,(int[]){   },	MenuOption_New(18,"dummy1"));
-	MenuSystem_Add(&menu,0,(int[]){   },	MenuOption_New(19,"dummy2"));
-	MenuSystem_Add(&menu,0,(int[]){   },	MenuOption_New(20,"dummy3"));
-	MenuSystem_Add(&menu,0,(int[]){   },	MenuOption_New(21,"dummy4"));
-	MenuSystem_Add(&menu,0,(int[]){   },	MenuOption_New(22,"dummy5"));
-	MenuSystem_Add(&menu,0,(int[]){   },	MenuOption_New(23,"dummy6"));
-	*/
-
-	MenuSystem_Set(&menu,0,(int[]){   },	MenuOption_New(0,"root","NONE",NULL,NULL));
-	MenuSystem_Add(&menu,0,(int[]){   },	MenuOption_New(1,"position","(x,y)",NULL,NULL));
-	MenuSystem_Add(&menu,0,(int[]){   },	MenuOption_New(2,"dimension","(x,y)",NULL,NULL));
-	MenuSystem_Add(&menu,0,(int[]){   },	MenuOption_New(3,"velocity","(x,y)",NULL,NULL));
-	MenuSystem_Add(&menu,0,(int[]){   },	MenuOption_New(4,"acceleration","(x,y)",NULL,NULL));
-	MenuSystem_Add(&menu,1,(int[]){ 0 },	MenuOption_New(5,"x","0.0",&rect.p.x,(char *(*)(void*))Float_CStr));
-	MenuSystem_Add(&menu,1,(int[]){ 0 },	MenuOption_New(6,"y","0.0",&rect.p.y,(char *(*)(void*))Float_CStr));
-	MenuSystem_Add(&menu,1,(int[]){ 1 },	MenuOption_New(7,"x","1.0",&rect.d.x,(char *(*)(void*))Float_CStr));
-	MenuSystem_Add(&menu,1,(int[]){ 1 },	MenuOption_New(8,"y","1.0",&rect.d.y,(char *(*)(void*))Float_CStr));
-	MenuSystem_Add(&menu,1,(int[]){ 2 },	MenuOption_New(9,"x","0.0",&velocity.x,(char *(*)(void*))Float_CStr));
-	MenuSystem_Add(&menu,1,(int[]){ 2 },	MenuOption_New(10,"y","0.0",&velocity.y,(char *(*)(void*))Float_CStr));
-	MenuSystem_Add(&menu,1,(int[]){ 3 },	MenuOption_New(11,"x","0.0",&acceleration.x,(char *(*)(void*))Float_CStr));
-	MenuSystem_Add(&menu,1,(int[]){ 3 },	MenuOption_New(12,"y","0.0",&acceleration.y,(char *(*)(void*))Float_CStr));
-
-	MenuSystem_Step(&menu);
-
-	selected = NULL;
-
-
-	tv = TransformedView_New((Vec2){ GetWidth(),GetHeight() });
+	tv = TransformedView_New((Vec2){ GetWidth(),GetWidth() });
 	TransformedView_Offset(&tv,(Vec2){ 0.0f,0.0f });
 
-	rect = (Rect){ 0.0f,0.0f,0.05f,0.05f };
-	velocity = (Vec2){ 0.0f,0.0f };
-	acceleration = (Vec2){ 0.0f,0.0f };
+	world = (char*)malloc(sizeof(char) * WORLD_X * WORLD_Y);
+	memset(world,0,sizeof(char) * WORLD_X * WORLD_Y);
+	
+	world_target = (char*)malloc(sizeof(char) * WORLD_X * WORLD_Y);
+	memset(world_target,0,sizeof(char) * WORLD_X * WORLD_Y);
 }
 void Update(AlxWindow* w){
 	tv.ZoomSpeed = (float)w->ElapsedTime;
 	TransformedView_HandlePanZoom(&tv,window.Strokes,(Vec2){ GetMouse().x,GetMouse().y });
 	
-	if(Stroke(ALX_KEY_ENTER).PRESSED){
-		selected = MenuSystem_Select(&menu);
-	}
-	if(Stroke(ALX_KEY_SPACE).PRESSED){
-		MenuSystem_Deactivate(&menu,&menu.trace);
-	}
+	const Vec2 tl = TransformedView_ScreenWorldPos(&tv,(Vec2){ 0.0f,0.0f });
+	const Vec2 br = TransformedView_ScreenWorldPos(&tv,(Vec2){ GetWidth(),GetHeight() });
 	
-	if(Stroke(ALX_KEY_UP).PRESSED){
-		MenuSystem_Up(&menu);
-	}
-	if(Stroke(ALX_KEY_DOWN).PRESSED){
-		MenuSystem_Down(&menu);
-	}
-	if(Stroke(ALX_KEY_LEFT).PRESSED){
-		MenuSystem_Left(&menu);
-	}
-	if(Stroke(ALX_KEY_RIGHT).PRESSED){
-		MenuSystem_Right(&menu);
+	if(Stroke(ALX_KEY_SPACE).DOWN){
+		memset(world_target,0,sizeof(char) * WORLD_X * WORLD_Y);
+
+		for(int i = (int)F32_Floor(tl.y) - 1;i<(int)F32_Ceil(br.y);i++){
+			for(int j = (int)F32_Floor(tl.x) - 1;j<(int)F32_Ceil(br.x);j++){
+				const char c = World_Get(world,j,i);
+				const char count = World_Get_N(world,j,i);
+
+				if(c == WORLD_ACTIVE){
+					if(count<2 || count>3){
+						World_Set(world_target,j,i,WORLD_INACTIVE);
+					}else{
+						World_Set(world_target,j,i,WORLD_ACTIVE);
+					}
+				}else{
+					if(count==3){
+						World_Set(world_target,j,i,WORLD_ACTIVE);
+					}else{
+						World_Set(world_target,j,i,WORLD_INACTIVE);
+					}
+				}
+			}
+		}
+
+		memcpy(world,world_target,sizeof(char) * WORLD_X * WORLD_Y);
 	}
 
-	if(Stroke(ALX_KEY_W).DOWN){
-		MenuOption* select = MenuSystem_Select(&menu);
-		
-		if(CStr_Cmp(select->text,"x") || CStr_Cmp(select->text,"y")){
-			*((float*)select->data) += 0.1f * (float)w->ElapsedTime;
+	if(Stroke(ALX_MOUSE_L).DOWN){
+		Vec2 m = TransformedView_ScreenWorldPos(&tv,GetMouse());
+		World_Set(world,m.x,m.y,WORLD_ACTIVE);
+	}
+	if(Stroke(ALX_MOUSE_R).DOWN){
+		Vec2 m = TransformedView_ScreenWorldPos(&tv,GetMouse());
+		World_Set(world,m.x,m.y,WORLD_INACTIVE);
+	}
+
+	Clear(BLACK);
+	
+	for(int i = (int)F32_Floor(tl.y) - 1;i<(int)F32_Ceil(br.y);i++){
+		for(int j = (int)F32_Floor(tl.x) - 1;j<(int)F32_Ceil(br.x);j++){
+			const char c = World_Get(world,j,i);
+			const Vec2 bg_p = TransformedView_WorldScreenPos(&tv,(Vec2){ j,i });
+			const Vec2 bg_d = TransformedView_WorldScreenLength(&tv,(Vec2){ 1.0f,1.0f });
+			
+			if(c==WORLD_ACTIVE){
+				RenderRect(bg_p.x,bg_p.y,bg_d.x + 1,bg_d.y + 1,GREEN);
+			}else if(c==WORLD_INACTIVE){
+				RenderRect(bg_p.x,bg_p.y,bg_d.x + 1,bg_d.y + 1,RED);
+			}else{
+				RenderRect(bg_p.x,bg_p.y,bg_d.x + 1,bg_d.y + 1,GRAY);
+			}
 		}
 	}
-	if(Stroke(ALX_KEY_S).DOWN){
-		MenuOption* select = MenuSystem_Select(&menu);
-		
-		if(CStr_Cmp(select->text,"x") || CStr_Cmp(select->text,"y")){
-			*((float*)select->data) -= 0.1f * (float)w->ElapsedTime;
-		}
-	}
-
-	MenuSystem_Update(&menu);
-
-
-	velocity = Vec2_Add(velocity,Vec2_Mulf(acceleration,w->ElapsedTime));
-	rect.p = Vec2_Add(rect.p,Vec2_Mulf(velocity,w->ElapsedTime));
-
-	if(rect.p.x<0.0f){
-		rect.p.x = 0.0f;
-		velocity.x *= -1.0f;
-	}
-	if(rect.p.y<0.0f){
-		rect.p.y = 0.0f;
-		velocity.y *= -1.0f;
-	}
-	if(rect.p.x>1.0f - rect.d.x){
-		rect.p.x = 1.0f - rect.d.x;
-		velocity.x *= -1.0f;
-	}
-	if(rect.p.y>1.0f - rect.d.y){
-		rect.p.y = 1.0f - rect.d.y;
-		velocity.y *= -1.0f;
-	}
-
-
-
-	Clear(WHITE);
-	
-
-	Vec2 bg_p = TransformedView_WorldScreenPos(&tv,(Vec2){ 0.0f,0.0f });
-	Vec2 bg_d = TransformedView_WorldScreenLength(&tv,(Vec2){ 1.0f,1.0f });
-	RenderRect(bg_p.x,bg_p.y,bg_d.x,bg_d.y,BLUE);
-
-	Vec2 p = TransformedView_WorldScreenPos(&tv,rect.p);
-	Vec2 d = TransformedView_WorldScreenLength(&tv,rect.d);
-	RenderRect(p.x,p.y,d.x,d.y,RED);
-
-	MenuSystem_Render(WINDOW_STD_ARGS,&menu,500.0f,750.0f);
-
-	//if(selected && selected->text)
-	//	RenderCStr(selected->text,0.0f,0.0f,BLUE);
 }
 void Delete(AlxWindow* w){
-    MenuSystem_Free(&menu);
+    if(world) free(world);
+	world = NULL;
+	
+    if(world_target) free(world_target);
+	world_target = NULL;
 }
 
 int main(){
-    if(Create("Menu System",2200,1200,1,1,Setup,Update,Delete))
+    if(Create("Cellular Automa 1",2200,1200,1,1,Setup,Update,Delete))
         Start();
     return 0;
 }
