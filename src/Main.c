@@ -107,9 +107,9 @@ void Update(AlxWindow* w){
 			const Vec2 bg_d = TransformedView_WorldScreenLength(&tv,(Vec2){ 1.0f,1.0f });
 			
 			if(c==WORLD_ACTIVE){
-				RenderRect(bg_p.x,bg_p.y,bg_d.x + 1,bg_d.y + 1,GREEN);
+				RenderRect(bg_p.x,bg_p.y,bg_d.x + 1,bg_d.y + 1,WHITE);
 			}else if(c==WORLD_INACTIVE){
-				RenderRect(bg_p.x,bg_p.y,bg_d.x + 1,bg_d.y + 1,RED);
+				RenderRect(bg_p.x,bg_p.y,bg_d.x + 1,bg_d.y + 1,BLACK);
 			}else{
 				RenderRect(bg_p.x,bg_p.y,bg_d.x + 1,bg_d.y + 1,GRAY);
 			}
